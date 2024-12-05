@@ -5,7 +5,7 @@ mimetypes.add_type('text/css', '.css')
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import logging
-import os, json
+import os, json , math
 from serials import Serial
 
 
@@ -43,14 +43,24 @@ if __name__ == "__main__":
         ser.open(isOpen)
         print("Connected", isOpen)
 
+    MAX = 80
     @socketio.on("xy")
-    def xy(x, y):
-        print(x, y)
-        offset = 50
-        a = (2 * y) / 3
-        b = -x - y/3
-        c = +x + y/3  
-        ser.write( b+offset, a+offset, c+offset)
+    def xy(x, y): # x, y are in range -1 to 1
+        print("x, y", x, y)
+        a = (1 + 2 * y) / 3
+        b = (1 - y + math.sqrt(3) * x) / 3
+        c = (1 - y - math.sqrt(3) * x) / 3
+
+        a = min(1, max(0, a))
+        b = min(1, max(0, b))
+        c = min(1, max(0, c))
+
+        a = int(a * MAX)
+        b = int(b * MAX)
+        c = int(c * MAX)
+
+        print("a, b, c", a, b, c)
+        ser.write( c, a, b)
     
     @socketio.on("z")
     def z(z):
@@ -59,10 +69,10 @@ if __name__ == "__main__":
     @socketio.on("individual")
     def individual(pos, value):
         if pos == 1:
-            ser.write( value, 0, 0)
+            ser.write( value, MAX, MAX)
         elif pos == 2:
-            ser.write( 0, value, 0)
+            ser.write( MAX, value, MAX)
         elif pos == 3:
-            ser.write( 0, 0, value)
+            ser.write( MAX, MAX, value)
 
     socketio.run(app, debug=True)

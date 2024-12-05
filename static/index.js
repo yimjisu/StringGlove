@@ -18,7 +18,7 @@ function makeDraggable(evt) {
     svg.addEventListener('mousedown', startDrag);
     svg.addEventListener('mousemove', drag);
     svg.addEventListener('mouseup', endDrag);
-    svg.addEventListener('mouseleave', endDrag);
+    // svg.addEventListener('mouseleave', endDrag);
         
     function getMousePosition(evt) {
         var CTM = svg.getScreenCTM();
@@ -28,12 +28,26 @@ function makeDraggable(evt) {
         };
     }
 
-    function startDrag(evt) {
-        var coord = getMousePosition(evt);
+    var isDragging = false
 
-        var r = 120;
-        var cx = 140;
-        var cy = 140;
+    function startDrag(evt) {
+        isDragging = true
+        send(evt)
+    }
+    function drag(evt) {
+        if (isDragging)
+            send(evt)
+    }
+    function endDrag(evt) {
+        isDragging = false
+    }
+
+    function send(evt) {
+        
+        var coord = getMousePosition(evt);
+        var r = 50;
+        var cx = 150;
+        var cy = 150;
         var dist = Math.sqrt((coord.x - cx) ** 2 + (coord.y - cy) ** 2);
         if (dist > r) {
             var angle = Math.atan2(coord.y - cy, coord.x - cx);
@@ -41,17 +55,14 @@ function makeDraggable(evt) {
             coord.y = cy + r * Math.sin(angle);
         }
         var selectedElement = document.getElementById("target");
-        selectedElement.setAttributeNS(null, "cx", coord.x);
-        selectedElement.setAttributeNS(null, "cy", coord.y);
+        selectedElement.setAttributeNS(null, "cx", coord.x-cx+r);
+        selectedElement.setAttributeNS(null, "cy", coord.y-cy+r);
 
-        var realx = coord.x - cx;
-        var realy = coord.y - cy;
+        var realx = (coord.x-cx)/r;
+        var realy = (coord.y-cy)/r;
         socket.emit("xy", realx, realy);
+        var output = document.getElementById("value");
         output.innerHTML = `(${Math.round(realx)}, ${Math.round(realy)}, 0)`;
-    }
-    function drag(evt) {
-    }
-    function endDrag(evt) {
     }
 }
 $().ready(function() {
