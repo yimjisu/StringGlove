@@ -90,7 +90,6 @@ Array.from(sliders).forEach((slider) => {
             socket.emit("z", this.value);
         } else {
             const id = parseInt(this.id[this.id.length - 1])
-            console.log(id, this.value)
             socket.emit("individual", id, this.value)
         }
     }
