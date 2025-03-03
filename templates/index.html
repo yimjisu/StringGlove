@@ -29,33 +29,49 @@
         </div>
 
         <div class="slider-container">
-            <p>All</p>
-            <input type="range" min="1" max="60" value="60" class="slider" id="rangeAll">
+            <p class="name">All</p>
+            <input type="range" min="0" max="180" value="180" class="slider" id="rangeAll">
+            <p id="rangeAllValue">180</p>
         </div>
         
         <div class="slider-container">
-            <p>1</p>
-            <input type="range" min="1" max="60" value="60" class="slider" id="range1">
+            <p class="name">Offset Left</p>
+            <input type="range" min="0" max="180" value="0" class="slider offset-slider" id="range1">
+            <p id="range1Value">0</p>
         </div>
         
         <div class="slider-container">
-            <p>2</p>
-            <input type="range" min="1" max="60" value="60" class="slider" id="range2">
+            <p class="name">Offset Center</p>
+            <input type="range" min="0" max="180" value="0" class="slider offset-slider" id="range2">
+            <p id="range2Value">0</p>
         </div>
         
         <div class="slider-container">
-            <p>3</p>
-            <input type="range" min="1" max="60" value="60" class="slider" id="range3">
+            <p class="name">Offset Right</p>
+            <input type="range" min="0" max="180" value="0" class="slider offset-slider" id="range3">
+            <p id="range3Value">0</p>
         </div>
-        
-        <svg width="300" height="300" onload="makeDraggable(evt)" style="border: 1px solid black;">
+
+        <div class="slider-container">
+            <p class="name">Move X</p>
+            <input type="range" min="0" max="180" value="0" class="slider move-slider" id="moveX">
+            <p id="moveXValue">0</p>
+        </div>
+
+        <div class="slider-container">
+            <p class="name">Move Y</p>
+            <input type="range" min="0" max="180" value="0" class="slider move-slider" id="moveY">
+            <p id="moveYValue">0</p>
+        </div>
+
+        <!-- <svg width="300" height="300" onload="makeDraggable(evt)" style="border: 1px solid black;">
             <g transform="translate(100, 100)">
                 <circle cx="50" cy="50" r="50" stroke="black" stroke-width="3" fill="none" />
                 <circle id="target" cx="50" cy="50" r="5" fill="red" class="draggable" />
             </g>
         </svg>
 
-        <p>Value: <span id="value">(0, 0, 0)</span></p>
+        <p>Value: <span id="value">(0, 0, 0)</span></p> -->
 
         </div>
     </body>

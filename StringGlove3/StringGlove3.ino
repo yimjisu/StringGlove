@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // StringDriver
 
-#define AMP 55
+#define AMP 180
 
 class StringDriver
 {
@@ -11,6 +11,9 @@ class StringDriver
   int p10 = 0;
   int p20 = 0;
   int p30 = 0;
+  int o10 = 0;
+  int o20 = 0;
+  int o30 = 0;
   int dp1 = 0;
   int dp2 = 0;
   int dp3 = 0;
@@ -34,10 +37,18 @@ public:
     dp3 = 0;
   }
 
-  void setOffset(int x){
-    p10 = x;
-    p20 = x;
-    p30 = x;
+  // Offset : 0 ... 180
+  void setDefaultOffset(int _p10, int _p20, int _p30){
+    p10 = _p10;
+    p20 = _p20;
+    p30 = _p30;
+  }
+
+  // Offset : 0 ... 180
+  void setOffset(int _o10, int _o20, int _o30){
+    o10 = _o10;
+    o20 = _o20;
+    o30 = _o30;
   }
 
   void reset(){
@@ -58,17 +69,18 @@ public:
   }
 
   void onTimer(){
-    int p1 = constrain(p10 + dp1, -AMP, AMP); // limits range of sensor values to between -AMP and AMP
-    sendPulse(pin1, p1 + 92);
-    int p2 = constrain(p20 + dp2, -AMP, AMP);
-    sendPulse(pin2, p2 + 88);
-    int p3 = constrain(p30 + dp3, -AMP, AMP);
-    sendPulse(pin3, p3 + 90);
+    int p1 = constrain(p10 + o10 + dp1, 0, AMP); // limits range of sensor values to between -AMP and AMP
+    sendPulse(pin1, p1);
+    int p2 = constrain(p20 + o20 + dp2, 0, AMP);
+    sendPulse(pin2, p2);
+    int p3 = constrain(p30 + o30 + dp3, 0, AMP);
+    sendPulse(pin3, p3);
   }
 
 private:
   // the standard pulse width range is from 500 to 2500.
-  void sendPulse(int pin, int x){     // x = 0 ... 180
+  void sendPulse(int pin, int x){     // x = [0 ... 180]
+    x = 180 - x;
     int pulsewidth = x * 200 / 18 + 500;
     digitalWrite(pin, HIGH);
     delayMicroseconds(pulsewidth);
@@ -82,7 +94,7 @@ StringDriver stringDriver[NDRIVERS];
 void setup() {
   Serial.begin(115200);
 
-  stringDriver[0].initialize(2, 4, 6);
+  stringDriver[0].initialize(2, 3, 4);
   // stringDriver[1].initialize(19, 32);
   // stringDriver[2].initialize(23, 4);
   // stringDriver[3].initialize(18, 16);
@@ -97,9 +109,15 @@ void setup() {
 void setAllOffsets(){
   int v = analogRead(A0);
   // v = 0 ... 1024
-  int x0 = (512 - v) / 6;
+  // x0 = 0 ... 180
+  int x0 = v/6;
   for(int i = 0; i < NDRIVERS; i++)
-    stringDriver[i].setOffset(x0);
+    stringDriver[i].setDefaultOffset(x0, x0, x0);
+}
+
+void setOffsets(int o1, int o2, int o3) {
+  for(int i = 0; i < NDRIVERS; i++)
+    stringDriver[i].setOffset(o1, o2, o3);
 }
 
 void pullAll(int dx){
@@ -122,36 +140,74 @@ int nsteps = sizeof(dp1) / sizeof(dp1[0]);
 
 #define DT 20
 
-int x, y, z; // x, y : -100 ~ 100 / z: 0 ~ 100
+int x, y, z;
 
-bool parseString(String data, int &x, int &y, int &z) {
+bool parseString(String data, String &type, int &x, int &y, int &z) {
   int firstSpace = data.indexOf(' ');
   int secondSpace = data.indexOf(' ', firstSpace + 1);
+  int thirdSpace = data.indexOf(' ', secondSpace + 1);
 
-  if (firstSpace == -1 || secondSpace == -1) {
+  if (firstSpace == -1 || secondSpace == -1 || thirdSpace == -1) {
     return false;
   }
-  x = data.substring(0, firstSpace).toInt();
-  y = data.substring(firstSpace + 1, secondSpace).toInt();
-  z = data.substring(secondSpace+1).toInt();
+  type = data.substring(0, firstSpace);
+  x = data.substring(firstSpace + 1, secondSpace).toInt();
+  y = data.substring(secondSpace+ 1, thirdSpace).toInt();
+  z = data.substring(thirdSpace + 1).toInt();
   return true;
+}
+
+void moveValue(String type, int _value, int _min, int _max, int &x, int &y, int &z) {
+    float value = float(_value);
+    float min = float(_min);
+    float max = float(_max);
+    value = (value - (min + max)/2.0) / (max - min);
+
+    float _x = 0;
+    float _y = 0;
+
+    if (type == "x") _x = value;
+    else if (type == "y") _y = value;
+    
+    float x0, y0, z0;
+    x0 = (1.0 - _y + sqrt(3) * _x) /3.0;
+    y0 = (1.0 + 2.0 * _y) /3.0;
+    z0 = (1.0 - _y - sqrt(3) * _x) /3.0;
+    // x0 + y0 + z0 = 1
+
+    int SUM = 90;
+    x = int(min(1, max(0, x0)) * SUM);
+    y = int(min(1, max(0, y0)) * SUM);
+    z = int(min(1, max(0, z0)) * SUM);
+    // x + y + z = SUM
 }
 
 void loop() {  // this should be called every 20 ms.
   unsigned long t_end = micros() + 20000;
   setAllOffsets();
 
-  //TODO: the following loop may take 25 ms.
   for(int i = 0; i < NDRIVERS; i++)
     stringDriver[i].onTimer();
 
 
   while (Serial.available()){
     String input = Serial.readStringUntil('\n');
-     if (parseString(input, x, y, z)) {
-      // Print parsed values to confirm
 
-      setAll(x-100, y-100, z-100);
+    String type; // w or o
+     if (parseString(input, type, x, y, z)) {
+      // Print parsed values to confirm
+      // x, y, z : [0 ~ 180]
+      // ex) w 0 0 0 for writing value
+      if (type == "w") setAll(x, y, z);
+      // ex) o 0 0 0 for offset
+      else if (type == "o") setOffsets(x, y, z);
+      // axis val min max
+      // ex) x 50 0 100
+      else if (type == "x" || type == "y") {
+        int x0, y0, z0;
+        moveValue(type, x, y, z, x0, y0, z0);
+        setAll(x0, y0, z0);
+      }
     }
   }
 

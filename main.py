@@ -68,11 +68,11 @@ if __name__ == "__main__":
     
     @socketio.on("individual")
     def individual(pos, value):
-        if pos == 1:
-            ser.write( value, MAX, MAX)
-        elif pos == 2:
-            ser.write( MAX, value, MAX)
-        elif pos == 3:
-            ser.write( MAX, MAX, value)
+        ser.offset(pos, value)
+        
+
+    @socketio.on("move")
+    def individual(type, value, min, max):
+        ser.move(type, value, min, max)
 
     socketio.run(app, debug=True)

@@ -87,10 +87,15 @@ var sliders = document.getElementsByClassName("slider")
 Array.from(sliders).forEach((slider) => {
     slider.oninput = function() {
         if (this.id == "rangeAll") {
+            $("#rangeAllValue").html(this.value)
             socket.emit("z", this.value);
-        } else {
+        } else if (this.classList.contains("offset-slider")){
             const id = parseInt(this.id[this.id.length - 1])
+            $(`#range${id}Value`).html(this.value)
             socket.emit("individual", id, this.value)
+        } else if(this.classList.contains("move-slider")) {
+            $(`#${this.id}Value`).html(this.value)
+            socket.emit("move", this.id, this.value, this.min, this.max)
         }
     }
 })
